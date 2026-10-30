@@ -12,3 +12,4 @@ ci_whisper.egg-info/entry_points.txt
 ci_whisper.egg-info/requires.txt
 ci_whisper.egg-info/top_level.txt
 tests/test_parse.py
+tests/test_suggest_fix.py

@@ -161,6 +161,35 @@ def build_chain(root: Hit | None, hits: list[Hit], lines: list[str]) -> list[Hit
 TEST_ID_RE = re.compile(r"^(?:FAILED\s+)?(?P<test>[\w./-]+\.py::[\w:.\[\]-]+)")
 
 
+ASSERTION_LINE = re.compile(
+    r"^\s*(?:E\s+)?(?P<msg>(?:[A-Za-z_][\w.]*(?:Error|Exception)|AssertionError)[: ].*?)\s*$")
+
+
+def _failure_detail(root: "Hit", lines: list[str] | None, test_id: str) -> str:
+    """The message after a FAILED line, or "" when the log does not carry one.
+
+    Returning the raw line as a "detail" is worse than returning nothing: it
+    produces sentences like "test_y failed with FAILED test_y". Better to say
+    the log had no message than to echo it.
+    """
+    if " - " in root.text:
+        detail = root.text.split(" - ", 1)[1].strip()
+        if detail and detail != test_id:
+            return detail
+    # line_no is 1-based, so slicing from it lands on the following line; the
+    # explicit skip keeps this correct if a caller ever hands over 0-based.
+    for line in (lines or [])[root.line_no:]:
+        stripped = line.strip()
+        if stripped == root.text.strip():
+            continue
+        if stripped.startswith("##[") or stripped.startswith("Run "):
+            break
+        match = ASSERTION_LINE.match(line)
+        if match:
+            return match.group("msg").strip()
+    return ""
+
+
 def suggest_fix(root: Hit | None, lines: list[str] | None = None) -> str:
     """Map the root cause to a concrete first action."""
     if root is None:
@@ -184,10 +213,16 @@ def suggest_fix(root: Hit | None, lines: list[str] | None = None) -> str:
     if root.kind == "test-failure":
         match = TEST_ID_RE.search(root.text)
         if match:
-            detail = root.text.split(" - ", 1)[1] if " - " in root.text else root.text
+            test = match.group("test")
+            detail = _failure_detail(root, lines, test)
+            if detail:
+                return (
+                    f"{test} failed with {detail}. Run it alone to reproduce, "
+                    "then fix the expectation or the code it exercises."
+                )
             return (
-                f"{match.group('test')} failed with {detail}. Run it alone to reproduce, "
-                "then fix the expectation or the code it exercises."
+                f"{test} failed, but the log carries no message for it. Run it alone "
+                "to reproduce, then fix the expectation or the code it exercises."
             )
     for pattern, template in FIX_RULES:
         match = pattern.search(root.text)
