@@ -13,10 +13,10 @@
 ## Install
 
 ```bash
-pipx install git+https://github.com/mgkvibez/ci-whisper.git
+pipx install ci-whisper
 ```
 
-Until it is on PyPI, install from git. For development: `git clone && pip install -e ".[dev]"`.
+Also on [PyPI](https://pypi.org/project/ci-whisper/). From source: `git clone && pip install -e ".[dev]"`.
 
 ## Three ways to use it
 
