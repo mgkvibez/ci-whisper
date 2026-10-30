@@ -8,7 +8,7 @@
 [![python](https://img.shields.io/badge/python-3.9%2B-blue.svg)](pyproject.toml)
 [![stars](https://img.shields.io/github/stars/mgkvibez/ci-whisper?style=flat&color=yellow)](https://github.com/mgkvibez/ci-whisper/stargazers)
 
-![ci-whisper demo](docs/demo/ci-whisper.svg)
+![ci-whisper reading a failed pytest log](docs/demo/ci-whisper.gif)
 
 ## Install
 
