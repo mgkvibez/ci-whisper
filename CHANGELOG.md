@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.1.3 - 2026-10-31
+
+- GitLab CI support: `--provider {auto,github,gitlab}`, default `auto`. GitLab section
+  markers are recognised, and logs are read without universal-newline translation, so
+  the line a diagnosis cites is the line in the real file. On an 11-line job log this
+  previously reported line 12, because `splitlines()` counted the `\r` inside a section
+  marker as a line break. Contributed by @Sonike in #4.
+- GitHub behaviour is unchanged: `auto` keeps the existing cleaning path whenever no
+  GitLab markers are present.
+
 ## v0.1.2 - 2026-10-29
 
 - Fix the reported version: `--version` said 0.1.0 while the package was

@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: ci-whisper
-Version: 0.1.2
+Version: 0.1.3
 Summary: Read a failed CI log and get the first real error, its causal chain, and a fix.
 Author: mgkvibez
 License: MIT
@@ -28,15 +28,15 @@ Dynamic: license-file
 [![python](https://img.shields.io/badge/python-3.9%2B-blue.svg)](pyproject.toml)
 [![stars](https://img.shields.io/github/stars/mgkvibez/ci-whisper?style=flat&color=yellow)](https://github.com/mgkvibez/ci-whisper/stargazers)
 
-![ci-whisper demo](docs/demo/ci-whisper.svg)
+![ci-whisper reading a failed pytest log](docs/demo/ci-whisper.gif)
 
 ## Install
 
 ```bash
-pipx install git+https://github.com/mgkvibez/ci-whisper.git
+pipx install ci-whisper
 ```
 
-Until it is on PyPI, install from git. For development: `git clone && pip install -e ".[dev]"`.
+Also on [PyPI](https://pypi.org/project/ci-whisper/). From source: `git clone && pip install -e ".[dev]"`.
 
 ## Three ways to use it
 
@@ -55,6 +55,20 @@ ci-whisper --file build.log --json
 ```
 
 Exit code is `1` when no error signal is found, so you can gate on it.
+
+GitHub Actions and GitLab CI logs are supported. The default `--provider auto`
+detects GitLab by its section markers and otherwise uses GitHub cleaning. To
+select a format explicitly, use `--provider github` or `--provider gitlab`:
+
+```bash
+ci-whisper --file gitlab-job.log --provider gitlab --json
+cat gitlab-job.log | ci-whisper
+```
+
+GitLab section markers and ANSI colors are removed. Displayed section headers
+are retained; marker-only lines become empty placeholders, so reported line
+numbers still refer to the original log. `--gh` continues to fetch GitHub Actions
+logs; download a GitLab log and use `--file` or stdin to read it.
 
 ## Why it exists
 
