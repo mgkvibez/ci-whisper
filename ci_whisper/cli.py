@@ -15,21 +15,24 @@ from .parse import Diagnosis, diagnose
 def read_log(args: argparse.Namespace) -> str:
     """Get the log text from a file, stdin, or `gh run view`."""
     if args.file:
-        return Path(args.file).read_text(encoding="utf-8", errors="replace")
+        # Decode without universal-newline translation: GitLab markers contain CR.
+        return Path(args.file).read_bytes().decode("utf-8", errors="replace")
     if args.gh:
         result = subprocess.run(
             ["gh", "run", "view", args.gh, "--log-failed"],
             capture_output=True,
-            text=True,
             check=False,
         )
         if result.returncode != 0 and not result.stdout:
-            print(f"ci-whisper: gh failed: {result.stderr.strip()}", file=sys.stderr)
+            error = result.stderr.decode("utf-8", errors="replace").strip()
+            print(f"ci-whisper: gh failed: {error}", file=sys.stderr)
             raise SystemExit(2)
-        return result.stdout
+        return result.stdout.decode("utf-8", errors="replace")
     if sys.stdin.isatty():
         print("ci-whisper: pass a log on stdin, --file, or --gh <run-id>", file=sys.stderr)
         raise SystemExit(2)
+    if hasattr(sys.stdin, "buffer"):
+        return sys.stdin.buffer.read().decode("utf-8", errors="replace")
     return sys.stdin.read()
 
 
@@ -65,10 +68,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--file", "-f", help="log file to read")
     parser.add_argument("--gh", metavar="RUN_ID", help="GitHub Actions run id (uses gh run view)")
     parser.add_argument("--json", action="store_true", help="machine-readable output")
+    parser.add_argument("--provider", choices=("github", "gitlab", "auto"), default="auto",
+                        help="CI log format (default: auto, detect GitLab section markers)")
     parser.add_argument("--version", action="version", version=f"ci-whisper {__version__}")
     args = parser.parse_args(argv)
 
-    diagnosis = diagnose(read_log(args))
+    diagnosis = diagnose(read_log(args), provider=args.provider)
     if args.json:
         print(json.dumps(diagnosis.as_dict(), indent=2))
     else:

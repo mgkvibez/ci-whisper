@@ -10,6 +10,7 @@ from .patterns import (
     ANSI_RE,
     CAUSAL_HINTS,
     FIX_RULES,
+    GITLAB_SECTION_RE,
     GO_COMPILER_ERROR_RE,
     GO_PACKAGE_FAILURE_RE,
     GO_TEST_FAILURE_RE,
@@ -61,14 +62,22 @@ class Diagnosis:
         }
 
 
-def clean_lines(raw: str) -> list[str]:
-    """Strip ANSI escapes and CI timestamps, keeping one entry per log line."""
-    out: list[str] = []
-    for line in raw.splitlines():
-        line = ANSI_RE.sub("", line)
-        line = TIMESTAMP_RE.sub("", line)
-        out.append(line.rstrip("\r"))
-    return out
+def clean_lines(raw: str, provider: str = "auto") -> list[str]:
+    """Clean provider metadata, keeping one entry per original newline."""
+    if provider not in {"auto", "github", "gitlab"}:
+        raise ValueError(f"Unknown provider: {provider}")
+    # GitLab embeds a carriage return between a section marker and its header.
+    # splitlines() would count that as a second line and shift every citation.
+    lines = raw.split("\n") if raw else []
+    if raw.endswith("\n"):
+        lines.pop()
+    lines = [TIMESTAMP_RE.sub("", ANSI_RE.sub("", line.rstrip("\r"))) for line in lines]
+    if provider == "auto":
+        provider = "gitlab" if any(GITLAB_SECTION_RE.match(line) for line in lines) else "github"
+    if provider == "gitlab":
+        # Keep the displayed header, or an empty placeholder for marker-only lines.
+        lines = [GITLAB_SECTION_RE.sub("", line) for line in lines]
+    return lines
 
 
 def is_noise(line: str) -> bool:
@@ -235,9 +244,9 @@ def suggest_fix(root: Hit | None, lines: list[str] | None = None) -> str:
     )
 
 
-def diagnose(raw: str) -> Diagnosis:
+def diagnose(raw: str, provider: str = "auto") -> Diagnosis:
     """Full pipeline: clean, find signals, pick root cause, chain, fix."""
-    lines = clean_lines(raw)
+    lines = clean_lines(raw, provider=provider)
     hits = find_signals(lines)
     root = pick_root_cause(hits)
     return Diagnosis(

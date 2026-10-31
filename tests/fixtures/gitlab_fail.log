@@ -1,0 +1,11 @@
+Running with gitlab-runner 18.7.0
+[0Ksection_start:1698567123:prepare_executor[0KPreparing the executor
+Using Docker executor with image python:3.12
+[0Ksection_end:1698567124:prepare_executor[0K
+[0Ksection_start:1698567125:step_script[collapsed=true][0KExecuting the job script
+$ python app.py
+Traceback (most recent call last):
+  File "/builds/example/app/app.py", line 1, in <module>
+[31mModuleNotFoundError: No module named 'yaml'[0m
+[0Ksection_end:1698567126:step_script[0K
+[31mERROR: Job failed: exit code 1[0m

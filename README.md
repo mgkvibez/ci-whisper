@@ -36,6 +36,20 @@ ci-whisper --file build.log --json
 
 Exit code is `1` when no error signal is found, so you can gate on it.
 
+GitHub Actions and GitLab CI logs are supported. The default `--provider auto`
+detects GitLab by its section markers and otherwise uses GitHub cleaning. To
+select a format explicitly, use `--provider github` or `--provider gitlab`:
+
+```bash
+ci-whisper --file gitlab-job.log --provider gitlab --json
+cat gitlab-job.log | ci-whisper
+```
+
+GitLab section markers and ANSI colors are removed. Displayed section headers
+are retained; marker-only lines become empty placeholders, so reported line
+numbers still refer to the original log. `--gh` continues to fetch GitHub Actions
+logs; download a GitLab log and use `--file` or stdin to read it.
+
 ## Why it exists
 
 A red build hands you 10k lines. The actual cause is line 4, and everything after it is consequence: retries, cascading test failures, the polite `##[error]Process completed with exit code 1`.
