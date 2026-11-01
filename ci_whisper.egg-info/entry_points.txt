@@ -1,2 +1,3 @@
 [console_scripts]
 ci-whisper = ci_whisper.cli:main
+ci-whisper-mcp = ci_whisper.mcp_server:main

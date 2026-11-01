@@ -18,7 +18,7 @@ pipx install ci-whisper
 
 Also on [PyPI](https://pypi.org/project/ci-whisper/). From source: `git clone && pip install -e ".[dev]"`.
 
-## Three ways to use it
+## Four ways to use it
 
 ```bash
 # 1. The one you will use daily: pipe the failing job log
@@ -49,6 +49,41 @@ GitLab section markers and ANSI colors are removed. Displayed section headers
 are retained; marker-only lines become empty placeholders, so reported line
 numbers still refer to the original log. `--gh` continues to fetch GitHub Actions
 logs; download a GitLab log and use `--file` or stdin to read it.
+
+## As an MCP server, so an agent reads the run itself
+
+`ci-whisper-mcp` speaks MCP over stdio. An agent can then ask for a diagnosis instead of
+being handed a log by a human, and it gets the same analysis the CLI prints:
+
+```json
+{
+  "mcpServers": {
+    "ci-whisper": {
+      "command": "ci-whisper-mcp"
+    }
+  }
+}
+```
+
+Two tools:
+
+| Tool | What it does |
+|---|---|
+| `read_ci_log` | takes `log`, or `path`, plus an optional `provider`; returns the first real error, the causal chain and a fix, as text and as structured content |
+| `read_github_run` | fetches a failed Actions run with `gh run view --log-failed`, then analyses it |
+
+It declares no runtime dependencies, and it does not depend on the `mcp` package either:
+the five protocol methods it needs are implemented against JSON-RPC 2.0 directly, so
+`pipx install ci-whisper` gives you a working server with nothing else on the machine.
+
+**What it does not do:** it opens no pull requests and holds no token. A diagnosis goes
+back to the agent, and the agent decides what to change. Exposing your GitHub credentials
+to a log parser so it can write branches would be a trade nobody asked for.
+
+Requesting a specific protocol version is the client's job; this server reports
+`2024-11-05`, the version it was built against. Verified against the official `mcp` SDK
+client, not only against its own tests: handshake, `tools/list`, a real tool call with
+structured content, the no-signal error path, and `ping`.
 
 ## Why it exists
 
