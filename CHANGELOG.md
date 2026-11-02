@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.3.0 - 2026-11-02
+
+- New mode: `ci-whisper cache --file <log>` explains what happened to every cache step in a
+  run, from the log alone. Six verdicts: `hit`, `cold`, `partial`, `lost`, `stale-risk`,
+  `failed`.
+- `partial` is the one people cannot see themselves: the exact key was missing and a
+  restore-key prefix was served instead, so the job silently rebuilt against stale
+  dependencies.
+- `lost` means nothing matched and nothing was saved, so it will miss again next run, and the
+  fix names the usual cause (`if: always()` missing on the save step).
+- `stale-risk` flags an exact-key hit that never saves, where an unhashed key serves the same
+  cache until eviction.
+- Four bugs found by its own fixtures before release: an exact-key restore logged after a
+  "not found" line was reported as `lost` (a hit reported as a problem); a miss answered by a
+  restore was described twice; a cold cache counted as a problem, so CI would fail on a first
+  run; and one save cleared every miss instead of only its own key.
+- Exit codes: 0 when nothing is wrong (including a cold first run), 1 when a cache problem is
+  real, 2 when the log cannot be read.
+
 ## v0.2.0 - 2026-10-31
 
 ci-whisper is now an MCP server as well as a CLI, so an agent can read a failed run

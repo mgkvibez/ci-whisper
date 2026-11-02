@@ -2,6 +2,7 @@ LICENSE
 README.md
 pyproject.toml
 ci_whisper/__init__.py
+ci_whisper/cache.py
 ci_whisper/cli.py
 ci_whisper/mcp_server.py
 ci_whisper/parse.py
@@ -12,6 +13,7 @@ ci_whisper.egg-info/dependency_links.txt
 ci_whisper.egg-info/entry_points.txt
 ci_whisper.egg-info/requires.txt
 ci_whisper.egg-info/top_level.txt
+tests/test_cache.py
 tests/test_mcp.py
 tests/test_parse.py
 tests/test_providers.py

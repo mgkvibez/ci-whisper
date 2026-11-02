@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ci-whisper"
-version = "0.2.0"
+version = "0.3.0"
 description = "Read a failed CI log and get the first real error, its causal chain, and a fix."
 readme = "README.md"
 requires-python = ">=3.9"

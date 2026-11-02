@@ -9,6 +9,7 @@ import sys
 from pathlib import Path
 
 from . import __version__
+from .cache import analyze_cache, render_cache
 from .parse import Diagnosis, diagnose
 
 
@@ -60,7 +61,39 @@ def render(diagnosis: Diagnosis) -> str:
     return "\n".join(out)
 
 
+def _cache_main(argv: list[str]) -> int:
+    """`ci-whisper cache`: explain what happened to the cache, from the log alone."""
+    parser = argparse.ArgumentParser(
+        prog="ci-whisper cache",
+        description="Explain why a cache step missed, restored a different key, or never saved.",
+    )
+    parser.add_argument("--file", "-f", help="log file (default: stdin)")
+    parser.add_argument("--json", action="store_true", help="machine-readable output")
+    parser.add_argument("--version", action="version", version=f"ci-whisper {__version__}")
+    args = parser.parse_args(argv)
+
+    if args.file:
+        try:
+            with open(args.file, "r", encoding="utf-8", errors="replace") as handle:
+                log = handle.read()
+        except OSError as exc:
+            print(f"ci-whisper: cannot read {args.file}: {exc}", file=sys.stderr)
+            return 2
+    else:
+        log = sys.stdin.read()
+
+    report = analyze_cache(log)
+    if args.json:
+        print(json.dumps(report.as_dict(), indent=2))
+    else:
+        print(render_cache(report))
+    return 1 if report.problems else 0
+
+
 def main(argv: list[str] | None = None) -> int:
+    argv = list(sys.argv[1:] if argv is None else argv)
+    if argv and argv[0] == "cache":          # a verb, so the existing flag-only form is intact
+        return _cache_main(argv[1:])
     parser = argparse.ArgumentParser(
         prog="ci-whisper",
         description="Read a failed CI log and report the first real error, its chain, and a fix.",

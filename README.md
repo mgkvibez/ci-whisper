@@ -50,6 +50,31 @@ are retained; marker-only lines become empty placeholders, so reported line
 numbers still refer to the original log. `--gh` continues to fetch GitHub Actions
 logs; download a GitLab log and use `--file` or stdin to read it.
 
+## Why the cache missed
+
+A cache that misses quietly costs minutes on every run, and the log hides it: one line says
+the key was not found, the next says something restored. That pair is the bug people miss.
+
+```
+$ ci-whisper cache --file run.log
+ci-whisper cache: 1 cache interaction(s), worst medium
+
+[MEDIUM] line 4: partial
+  key:    Linux-node-77aa0b
+  why:    the exact key (Linux-node-9f8c1a) did not exist and a restore-key prefix did. Either the hashed file changed or that cache lives on another branch: caches are scoped to the branch and its base
+  fix:    compare the restored key with the one requested; if the suffix is a hash, the dependency file changed, which is expected. If it is the same, the cache was built on another branch
+```
+
+Six verdicts, each tied to the line that proves it: `hit`, `cold` (a first run, not a
+problem), `partial` (a restore-key prefix answered, so you rebuilt against stale
+dependencies), `lost` (nothing matched and nothing saved, so it will miss again), `stale-risk`
+(an exact key with no content hash, served until eviction) and `failed` (the job died because
+`fail-on-cache-miss` was set).
+
+Exit codes: 0 when nothing is wrong including a cold first run, 1 when a cache problem is
+real, 2 when the log cannot be read. A `stale-risk` is reported without failing the build,
+because the decision to hash a key is the team's, not the linter's.
+
 ## As an MCP server, so an agent reads the run itself
 
 `ci-whisper-mcp` speaks MCP over stdio. An agent can then ask for a diagnosis instead of
